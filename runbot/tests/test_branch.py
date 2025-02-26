@@ -65,6 +65,44 @@ class TestBranch(RunbotCase):
             self.Branch.search([('dname', '=', branch.dname)]),
         )
 
+    def test_automatic_match_with_error(self):
+        self.env['runbot.build.error'].search([]).active = False
+        errors = self.env['runbot.build.error'].create([{} for _ in range(5)])
+        branch = self.Branch.create({
+            'name': '18.0-test',
+            'remote_id': self.remote_server.id,
+            'is_pr': True,
+        })
+        # Does not crash without pr_body or nothing on pr_body
+        branch._match_errors_from_body()
+        branch.pr_body = ''
+        branch._match_errors_from_body()
+        # Does not link unknown errors
+        branch.pr_body = f'This is an error {errors[0].id}'
+        branch._match_errors_from_body()
+        self.assertFalse(errors.fixing_pr_id)
+        # Test multiple formats
+        branch.pr_body = f"""
+        Runbot error {errors[0].id}
+        runbot error {errors[1].id}
+        runbot-error-{errors[2].id}
+        https://domain.com/odoo/runbot.build.error/{errors[3].id}
+        https://domain.com/odoo/runbot-error/{errors[4].id}/
+        """
+        branch._match_errors_from_body()
+        self.assertTrue(all(e.fixing_pr_id == branch for e in errors))
+        # Test that it does not reassign
+        errors.fixing_pr_id = False
+        branch.pr_body = f'Runbot ERror {errors[0].id}'
+        other_branch = self.Branch.create({
+            'name': 'other-branch',
+            'remote_id': self.remote_server.id,
+            'is_pr': True,
+        })
+        errors[0].fixing_pr_id = other_branch
+        branch._match_errors_from_body()
+        self.assertEqual(errors[0].fixing_pr_id, other_branch)
+
 class TestBranchRelations(RunbotCase):
 
     def setUp(self):
