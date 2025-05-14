@@ -554,7 +554,7 @@ class Repo(models.Model):
                 return refs
             except Exception:
                 _logger.exception('Fail to get refs for repo %s', self.name)
-                self.env['runbot.runbot'].warning('Fail to get refs for repo %s', self.name)
+                self.env['runbot.runbot']._warning('Fail to get refs for repo %s', self.name)
         return []
 
     def _find_or_create_branches(self, refs):
@@ -715,7 +715,8 @@ class Repo(models.Model):
         while not success and try_count < 5:
             time.sleep(delay)
             try:
-                self._git(['fetch', '-p', '--all', '-j2'])  # j2 to use two job and fetch multiple origin at the same time
+                ret = self._git(['fetch', '-p', '--all', '-j2'])  # j2 to use two job and fetch multiple origin at the same time
+                _logger.warning(f"git cmd return: {ret}")
                 success = True
             except subprocess.CalledProcessError as e:
                 try_count += 1

@@ -1,5 +1,8 @@
 from odoo import models, fields, api
 from odoo.exceptions import ValidationError
+import logging
+
+_logger = logging.getLogger(__name__)
 
 
 class Project(models.Model):
@@ -53,6 +56,15 @@ class Project(models.Model):
         for project, bundle in zip(projects, dummy_bundles):
             project.dummy_bundle_id = bundle
         return projects
+
+
+    def force_fetch_repos(self):
+        self.ensure_one()
+        repos = self.repo_ids
+        repos |= self.trigger_ids.repo_ids
+        _logger.warning(f"force fetching repos: {repos.mapped('name')}")
+        for repo in repos.sudo():
+            repo._update_batches(force=True)
 
 
 class Category(models.Model):

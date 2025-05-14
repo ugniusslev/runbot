@@ -262,7 +262,7 @@ class Branch(models.Model):
         return self._recompute_infos()
 
     def action_update_bundle_id(self):
-        return self._update_bundle_ids()
+        return self._update_bundle_id()
 
 
 class RefLog(models.Model):
