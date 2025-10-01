@@ -5,6 +5,9 @@
         <field name="model">runbot.project</field>
         <field name="arch" type="xml">
             <form string="Projects">
+                <header>
+                    <button name="force_fetch_repos" type="object">Force fetch repos</button>
+                </header>
                 <group>
                     <field name="name"/>
                     <field name="keep_sticky_running"/>
